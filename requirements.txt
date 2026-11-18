@@ -1,9 +1,8 @@
-langgraph
-langchain
-langchain-core
-langchain-groq
-typing-extensions
-ipython
-requests
-streamlit
-python-dotenv
+langchain==1.5.0
+langchain-core==1.8.2
+langchain-groq==1.2.0
+langgraph==1.2.22
+python-dotenv==1.2.4
+requests==2.34.2
+streamlit==1.67.0
+typing-extensions==4.16.0

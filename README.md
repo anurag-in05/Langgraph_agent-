@@ -1,47 +1,43 @@
-## AI-Health-Supervisor-Agent
+# AI Health Supervisor Agent
 
-A multi-agent AI system designed to provide personalized health guidance across fitness, diet, and mental wellness, coordinated by a central **Supervisor Agent**.
+A Streamlit chat app for workout suggestions, meal plans, and everyday mental wellness. A LangGraph supervisor routes each request to the relevant specialists and streams their replies to the chat.
 
-This AI assistant helps users improve their well-being by generating:
-- 🏋️ Customized workout plans  
-- 🥗 Healthy meal suggestions  
-- 🧘 Mindfulness and stress-reducing tips  
+![Supervisor and three specialist agents](Architectural_Diagram.png)
 
+## How it works
 
-![My Image](https://github.com/anurag-in05/AI_Health_Supervisor_Agent/blob/43b5fec4b685aca5910e5a93b1b19eab21be8cb7/Architectural_Diagram.png)
+The supervisor uses Groq to choose the next specialist or end the turn. Fitness and dietitian are ReAct workers. They can call their own tool, read the result, and decide whether to call it again or answer. Wellness uses the conversation history in a direct model call. Each worker returns control to the supervisor. An in-memory LangGraph checkpoint keeps follow-up messages in the same browser session.
 
+## Run locally
 
+Use Python 3.11 or newer. From the repository root, install the pinned runtime dependencies.
 
-
-
-
-
-### 🛠 Tech Stack
-- LangGraph – for building the multi-agent state machine
-- LangChain – for Tool orchestration
-- Groq (Llama 3.3 70B) – for agent reasoning and responses
-- Streamlit – for frontend
-- Python – main programming language
-
-
-### 📦 Installation & Setup
-
-#### 1. Clone the repository
 ```bash
-git clone https://github.com/anurag-in05/AI_Health_Supervisor_Agent.git
-cd AI_Health_Supervisor_Agent
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
-#### 2. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-#### 3. Add your API keys
-Copy `.env.example` to `.env` and fill in:
-- `GROQ_API_KEY` – from [Groq Console](https://console.groq.com/keys)
-- `EXERCISE_API_KEY` – from [API Ninjas](https://api-ninjas.com/profile)
-- `DIET_API_KEY` – from [Spoonacular](https://spoonacular.com/food-api/console#Profile)
 
-#### 4. Run the App
+For first-time setup, copy `.env.example` to `.env` and fill in the keys you plan to use.
+
+| Variable | Used for |
+| --- | --- |
+| `GROQ_API_KEY` | Chat and routing. The key needs access to `llama-3.3-70b-versatile`. [Groq console](https://console.groq.com/keys) · [Groq model catalog](https://console.groq.com/docs/models) |
+| `EXERCISE_API_KEY` | Exercise lookups for the fitness worker. [API Ninjas](https://api-ninjas.com/profile) |
+| `DIET_API_KEY` | Meal plans and recipe details for the dietitian worker. [Spoonacular console](https://spoonacular.com/food-api/console#Profile) |
+
+Start Streamlit after setting up the keys.
+
 ```bash
 streamlit run main.py
 ```
+
+## Run the tests
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The tests use Streamlit's `AppTest`, scripted model responses, and mocked HTTP responses. They run without API keys and cover routing, ReAct tool calls, conversation memory, and provider errors.
+
+[CLAUDE.md](CLAUDE.md) describes the runtime modules. [CODE_REVIEW.md](CODE_REVIEW.md) records the original review. [Health_Assistant_AI_Agent.ipynb](Health_Assistant_AI_Agent.ipynb) is the original Ollama prototype.

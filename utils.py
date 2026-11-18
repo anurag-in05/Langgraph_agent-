@@ -1,14 +1,17 @@
-from langchain_core.messages import HumanMessage,AIMessage
+from collections.abc import Mapping
 
-def parse_langgraph_output(stream):
-    results = []
-    for key, value in stream.items():
-        if key == "supervisor":
+from langchain_core.messages import AIMessage
+
+
+def parse_langgraph_output(updates: Mapping[str, object]) -> list[tuple[str, str]]:
+    """Extract specialist replies from one graph update for the chat UI."""
+    replies = []
+    for node, update in updates.items():
+        if node == "supervisor" or not isinstance(update, Mapping):
             continue
-        messages = value.get("messages", [])
-        for msg in messages:
-            if isinstance(msg, str):
-                results.append((key, msg))
-            elif isinstance(msg, AIMessage):
-                results.append((key, msg.content))
-    return results
+        for message in update.get("messages", []):
+            if isinstance(message, AIMessage):
+                replies.append((node, message.text))
+            elif isinstance(message, str):
+                replies.append((node, message))
+    return replies

@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A source-grounded study guide to the AI Health Supervisor Agent.">
+<title>AI Health Supervisor Agent | Codebase guide</title>
+<style>
+  :root {
+    color-scheme: light;
+    --canvas: #f5f9f8;
+    --paper: #fff;
+    --ink: #132c31;
+    --muted: #456166;
+    --teal: #006759;
+    --line: #cbded9;
+    --tint: #e1f3ed;
+    --hero: #073c3d;
+    --mint: #a9ecca;
+    --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-padding-top: 1.25rem; }
+  body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font: 1rem/1.64 "Avenir Next", Avenir, system-ui, sans-serif;
+  }
+  a { color: var(--teal); text-underline-offset: .19em; }
+  a:hover { text-decoration-thickness: .14em; }
+  :focus-visible { outline: 3px solid #a65500; outline-offset: 4px; }
+  .skip { position: absolute; top: .5rem; left: .5rem; padding: .5rem 1rem; background: var(--paper); z-index: 2; }
+  .skip:not(:focus) { clip-path: inset(50%); }
+  .hero { background: var(--hero); color: #f4fffa; }
+  .hero-inner { max-width: 1220px; margin: auto; padding: clamp(2.5rem, 6vw, 5rem) clamp(1.1rem, 4vw, 3rem); }
+  .hero .eyebrow { color: var(--mint); font-weight: 650; margin-top: 0; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -.032em; overflow-wrap: break-word; }
+  h1 { max-width: 17ch; font-size: clamp(2.4rem, 6.5vw, 5rem); margin: .6rem 0 1rem; font-weight: 730; }
+  .hero .lede { color: #d9f2e9; max-width: 58ch; font-size: clamp(1.04rem, 2vw, 1.24rem); }
+  .hero .actions { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; margin: 1.45rem 0 0; align-items: center; }
+  .hero a { color: var(--mint); font-weight: 650; }
+  .hero .primary { background: var(--mint); color: var(--hero); border-radius: .45rem; padding: .58rem .95rem; text-decoration: none; }
+  .hero .primary:hover { background: #d4fae7; }
+  .layout {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 52rem);
+    gap: clamp(1.5rem, 5vw, 4.25rem);
+    max-width: 1220px;
+    margin: auto;
+    padding: 2.6rem clamp(1.1rem, 4vw, 3rem) 4rem;
+  }
+  .toc { position: sticky; top: 1.5rem; align-self: start; max-height: calc(100vh - 3rem); overflow: auto; }
+  .toc p { font-weight: 750; margin: 0 0 .55rem; }
+  .toc ul { list-style: none; padding: 0; margin: 0; border-left: 2px solid var(--line); }
+  .toc a { display: block; padding: .33rem .75rem; color: var(--muted); text-decoration: none; font-size: .92rem; }
+  .toc a:hover { background: var(--tint); color: var(--teal); }
+  section { margin: 0 0 3.3rem; padding: 0 0 2.8rem; border-bottom: 1px solid var(--line); }
+  section:last-child { margin-bottom: 0; }
+  h2 { font-size: clamp(1.85rem, 4vw, 2.55rem); margin: 0 0 .85rem; }
+  h3 { font-size: 1.24rem; margin: 1.55rem 0 .5rem; }
+  p { max-width: 74ch; margin: .65rem 0; }
+  ul, ol { padding-left: 1.5rem; }
+  li + li { margin-top: .45rem; }
+  main { min-width: 0; }
+  code { font: .88em var(--mono); overflow-wrap: anywhere; border-radius: .22rem; background: #e9f1ef; padding: .12em .27em; }
+  pre { overflow-x: auto; padding: .95rem 1.15rem; border: 1px solid var(--line); background: #edf5f3; border-radius: .45rem; line-height: 1.55; }
+  pre code { background: none; padding: 0; overflow-wrap: normal; }
+  .source { color: var(--muted); font-size: .88rem; margin-top: .95rem; }
+  .source a + a { margin-left: .56rem; }
+  blockquote, .note { margin: 1.05rem 0; padding: .75rem 1rem; border-left: 4px solid #40947e; background: var(--tint); }
+  blockquote p, .note p { margin: .25rem 0; }
+  .graph { margin: 1.35rem 0 1rem; background: var(--paper); border: 1px solid var(--line); border-radius: .55rem; padding: clamp(.85rem, 2.5vw, 1.4rem); }
+  .graph code { font-size: .9em; }
+  .graph p { margin: .4rem 0; }
+  .route-core { display: flex; flex-wrap: wrap; gap: .35rem .6rem; align-items: center; }
+  .node { display: inline-block; padding: .32rem .6rem; background: var(--tint); border: 1px solid var(--line); white-space: normal; border-radius: .35rem; font-weight: 700; }
+  .node.supervisor { background: var(--hero); color: white; border-color: var(--hero); }
+  .graph ul { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); list-style: none; padding: .85rem 0 0; margin: .85rem 0; border-top: 1px solid var(--line); gap: .75rem; }
+  .graph li { margin: 0; }
+  .graph li small { display: block; margin-top: .28rem; color: var(--muted); line-height: 1.45; }
+  .graph figcaption { color: var(--muted); font-size: .88rem; padding-top: .5rem; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: .75rem 0; background: var(--paper); }
+  th, td { text-align: left; vertical-align: top; padding: .62rem .75rem; border-bottom: 1px solid var(--line); }
+  thead th { background: var(--tint); }
+  tbody th { width: 35%; font-weight: 650; }
+  .trace-controls { display: flex; flex-wrap: wrap; gap: .45rem; margin: 1rem 0; }
+  button {
+    font: inherit; font-size: .92rem; cursor: pointer; font-weight: 650; color: var(--teal);
+    background: var(--paper); border: 1px solid #8ab5a9; padding: .43rem .75rem; border-radius: .36rem;
+  }
+  button:hover { background: var(--tint); }
+  button[aria-pressed="true"] { background: var(--hero); color: white; border-color: var(--hero); }
+  .trace { background: var(--paper); border: 1px solid var(--line); border-radius: .5rem; padding: 1rem 1.2rem; margin: .8rem 0; }
+  .trace h3 { margin: 0 0 .7rem; }
+  .trace ol { margin-bottom: .4rem; }
+  dl { margin: 0; }
+  dt { font-weight: 750; margin: .85rem 0 .22rem; }
+  dd { margin: 0; max-width: 74ch; }
+  details { border-top: 1px solid var(--line); padding: .7rem 0; }
+  details:last-child { border-bottom: 1px solid var(--line); }
+  summary { color: var(--teal); cursor: pointer; font-weight: 700; }
+  details > p { margin: .5rem 0 .15rem; }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist label { display: flex; align-items: baseline; gap: .55rem; }
+  .checklist input { accent-color: var(--teal); margin: 0; flex: none; }
+  @media (max-width: 820px) {
+    .layout { display: block; padding-top: 1.4rem; }
+    .toc { position: static; max-height: none; margin-bottom: 2rem; }
+    .toc ul { display: flex; flex-wrap: wrap; gap: .2rem .25rem; border-left: none; }
+    .toc li { margin: 0; }
+    .toc a { padding: .32rem .55rem; border: 1px solid var(--line); border-radius: .35rem; }
+    .graph ul { grid-template-columns: 1fr; }
+    th, td { padding: .55rem .5rem; }
+  }
+  @media print {
+    body, .hero { background: white; color: black; }
+    .hero-inner, .layout { display: block; padding: 0; }
+    .hero .eyebrow, .hero .lede { color: inherit; }
+    .hero .actions, .toc, .skip, .trace-controls { display: none !important; }
+    .trace[hidden] { display: block !important; }
+    details:not([open]) > :not(summary) { display: block; }
+    h2, h3 { break-after: avoid; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#overview">Skip to the guide</a>
+<header class="hero">
+  <div class="hero-inner">
+    <p class="eyebrow">Codebase study guide</p>
+    <h1>AI Health Supervisor Agent</h1>
+    <p class="lede">Follow a chat message through the supervisor, specialist agents, API tools, and back to Streamlit. Then practice explaining the design and tracing it in the source.</p>
+    <div class="actions"><a class="primary" href="#walkthrough">Trace a request</a><a href="#interview">Practice interview answers</a></div>
+  </div>
+</header>
+<div class="layout">
+  <nav class="toc" aria-label="Guide contents">
+    <p>In this guide</p>
+    <ul>
+      <li><a href="#overview">Architecture</a></li>
+      <li><a href="#files">Repository map</a></li>
+      <li><a href="#walkthrough">Request walkthrough</a></li>
+      <li><a href="#agents">Supervisor and workers</a></li>
+      <li><a href="#tools">External API tools</a></li>
+      <li><a href="#memory">Chat and memory</a></li>
+      <li><a href="#decisions">Design tradeoffs</a></li>
+      <li><a href="#changes">Fixes and limitations</a></li>
+      <li><a href="#run">Run and explore</a></li>
+      <li><a href="#interview">Interview practice</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <section id="overview" aria-labelledby="overview-heading">
+      <h2 id="overview-heading">Architecture</h2>
+      <p>The project is a Python chat app for workout suggestions, meal planning, and general mental wellness tips. LangGraph coordinates the work, LangChain supplies model and tool interfaces, and Streamlit renders the conversation.</p>
+      <figure class="graph">
+        <div class="route-core">
+          <span class="node">Streamlit input</span><span aria-hidden="true">→</span><span class="node">START</span><span aria-hidden="true">→</span><span class="node supervisor">Supervisor</span><span aria-hidden="true">→</span><span class="node">FINISH → END</span>
+        </div>
+        <ul aria-label="Workers the supervisor can choose">
+          <li><span class="node">Fitness</span><small>ReAct with the API Ninjas exercise tool</small></li>
+          <li><span class="node">Dietitian</span><small>ReAct with the Spoonacular meal tool</small></li>
+          <li><span class="node">Wellness</span><small>Chat prompt and model response</small></li>
+        </ul>
+        <figcaption>Each worker appends a reply and returns control to the supervisor. Streamlit displays worker replies as graph steps arrive. The supervisor can select another worker or end the turn.</figcaption>
+      </figure>
+      <p>Each role uses the same configured model. The roles differ in prompts, available tools, and responsibility. The current app uses <code>llama-3.3-70b-versatile</code> through <code>ChatGroq</code>. The prototype notebook and the older app commit <code>5a887fd</code> use <code>qwen2.5:14b</code> through <code>ChatOllama</code>. For a demo, name the model in the version you are actually running.</p>
+      <p class="source">Source <a href="../main.py">main.py, build_graph</a> <a href="../agents.py">agents.py, create_agent_nodes</a> <a href="../Health_Assistant_AI_Agent.ipynb">notebook cell 22</a></p>
+    </section>
+
+    <section id="files" aria-labelledby="files-heading">
+      <h2 id="files-heading">Repository map</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">File</th><th scope="col">What to look for</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><a href="../main.py">main.py</a></th><td>Runtime entry point. Loads configuration, builds the graph, assigns a per-session thread ID, and renders streamed replies.</td></tr>
+            <tr><th scope="row"><a href="../agents.py">agents.py</a></th><td>Shared state, routing schema, supervisor, and the three worker nodes.</td></tr>
+            <tr><th scope="row"><a href="../tools.py">tools.py</a></th><td>HTTP calls, response formatting, and two functions exposed as model tools.</td></tr>
+            <tr><th scope="row"><a href="../utils.py">utils.py</a></th><td>Converts a graph update into displayable <code>(agent_name, content)</code> pairs.</td></tr>
+            <tr><th scope="row"><a href="../tests/test_app.py">test_app.py</a>, <a href="../tests/test_tools.py">test_tools.py</a></th><td>Offline tests for the chat, graph, and provider integrations.</td></tr>
+            <tr><th scope="row"><a href="../Health_Assistant_AI_Agent.ipynb">Health_Assistant_AI_Agent.ipynb</a></th><td>Prototype that defines tools, workers, routing, and a graph inline. It experiments with streaming by printing events. Some prototype cells differ from the runtime implementation.</td></tr>
+            <tr><th scope="row"><a href="../requirements.txt">requirements.txt</a>, <a href="../.env.example">.env.example</a>, <a href="../.gitignore">.gitignore</a></th><td>Dependencies, environment variable names, and Git exclusions for local credentials and generated files.</td></tr>
+            <tr><th scope="row"><a href="../README.md">README.md</a>, <a href="../CLAUDE.md">CLAUDE.md</a>, <a href="../CODE_REVIEW.md">CODE_REVIEW.md</a></th><td>Setup and overview, repository guidance, and a record of findings and mocked checks. Use the runtime files to confirm current behavior.</td></tr>
+            <tr><th scope="row"><a href="../Architectural_Diagram.png">Architectural_Diagram.png</a></th><td>Original diagram of the supervisor and three specialists. Use <code>main.py</code> to see how the UI and checkpointing connect to it.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Read <code>main.py</code> first. Follow the imports into <code>agents.py</code>, then inspect the tools and return to <code>utils.py</code> to see how the results reach the user.</p>
+    </section>
+
+    <section id="walkthrough" aria-labelledby="walkthrough-heading">
+      <h2 id="walkthrough-heading">Trace a request</h2>
+      <p>These are illustrative paths through the graph. Routing, tool use, and wording depend on the model's decisions.</p>
+      <div class="trace-controls" id="trace-controls" role="group" aria-label="Choose a request to trace" hidden>
+        <button type="button" aria-pressed="true" aria-controls="trace-diet">Meal plan</button>
+        <button type="button" aria-pressed="false" aria-controls="trace-fitness">Workout</button>
+        <button type="button" aria-pressed="false" aria-controls="trace-wellness">Wellness</button>
+        <button type="button" aria-pressed="false" aria-controls="trace-mixed">Mixed request</button>
+      </div>
+
+      <article class="trace" id="trace-diet" aria-labelledby="trace-diet-heading">
+        <h3 id="trace-diet-heading">“Can you suggest a vegetarian meal plan for today?”</h3>
+        <ol>
+          <li><code>main.py</code> converts the input to a <code>HumanMessage</code> and calls <code>graph.stream</code> with the session's thread ID.</li>
+          <li>The supervisor can produce <code>{"next": "dietitian"}</code>. A LangGraph <code>Command</code> transfers control to that worker.</li>
+          <li>The worker's ReAct agent can call <code>diet_tool(query="vegetarian")</code>. The tool requests a daily plan and then fetches details for each returned recipe.</li>
+          <li>The worker appends its final text as an <code>AIMessage</code> named <code>dietitian</code>. The UI displays it from the graph update.</li>
+          <li>The supervisor sees the reply prefixed with <code>dietitian</code> and can return <code>FINISH</code>, which maps to <code>END</code>.</li>
+        </ol>
+      </article>
+      <article class="trace" id="trace-fitness" aria-labelledby="trace-fitness-heading">
+        <h3 id="trace-fitness-heading">“Give me a lower-body workout.”</h3>
+        <ol>
+          <li>The supervisor can choose <code>fitness</code> after seeing the chat message.</li>
+          <li>The worker can call <code>fitness_data_tool(query="lower_body")</code>. The tool chooses one muscle in that category and one exercise type at random.</li>
+          <li>API Ninjas receives those filters and the default <code>intermediate</code> difficulty. The tool formats up to three records with names, muscles, and instructions.</li>
+          <li>The fitness agent can use the returned records in its answer. The worker emits the reply, and control returns to the supervisor.</li>
+        </ol>
+      </article>
+      <article class="trace" id="trace-wellness" aria-labelledby="trace-wellness-heading">
+        <h3 id="trace-wellness-heading">“Can you share a simple way to unwind before bed?”</h3>
+        <ol>
+          <li>The supervisor can route to the <code>wellness</code> node.</li>
+          <li><code>wellness_node</code> sends a system message followed by the conversation history.</li>
+          <li>The shared model generates a tip without calling an exercise or meal API. The worker adds its reply and returns to the supervisor.</li>
+        </ol>
+      </article>
+      <article class="trace" id="trace-mixed" aria-labelledby="trace-mixed-heading">
+        <h3 id="trace-mixed-heading">“Suggest a workout and a vegan meal plan.”</h3>
+        <ol>
+          <li>The supervisor picks one worker per decision. One possible route is <code>supervisor → fitness → supervisor → dietitian → supervisor → END</code>.</li>
+          <li>The UI renders each worker's reply when that node finishes. The messages remain available to the supervisor and later workers on the same thread.</li>
+          <li>The model can also choose a different order, repeat a worker, or finish early. The current state tracks messages and the next route. It has no explicit checklist of requested topics.</li>
+        </ol>
+      </article>
+      <p class="source">Source <a href="../main.py">main.py, chat input and graph.stream</a> <a href="../agents.py">agents.py</a> <a href="../tools.py">tools.py</a></p>
+    </section>
+
+    <section id="agents" aria-labelledby="agents-heading">
+      <h2 id="agents-heading">Supervisor and workers</h2>
+      <h3>The outer loop routes between specialists</h3>
+      <p>A graph node is a function that receives shared state. <code>State</code> extends <code>MessagesState</code>, which keeps a growing conversation as nodes add messages. The extra <code>next</code> field records the supervisor's destination. The <code>goto</code> on the returned <code>Command</code> controls where the graph actually goes.</p>
+      <pre><code>class State(MessagesState):
+    next: str
+
+class Router(TypedDict):
+    next: Route</code></pre>
+      <p>The supervisor prepends its system prompt to the messages and uses <code>model.with_structured_output(Router, method="function_calling")</code>. The schema supplies four possible values for <code>next</code>. The node validates the value, translates <code>FINISH</code> to <code>END</code>, and returns the route and state update together.</p>
+      <p><code>main.py</code> registers the four nodes and adds the explicit edge from <code>START</code> to <code>supervisor</code>. Node commands handle the remaining transitions at runtime.</p>
+      <h3>The inner loops let fitness and dietitian use tools</h3>
+      <p>ReAct combines reasoning and acting. LangChain's <code>create_agent</code> builds each worker's tool-calling loop. The model can call its registered tool, read the returned data, and decide whether to use the tool again or answer. Each worker has one tool and a short domain prompt.</p>
+      <pre><code>result = fitness_agent.invoke({"messages": state["messages"]})
+return _specialist_reply("fitness", result["messages"][-1].text)</code></pre>
+      <p>The worker publishes the final message content to the outer graph. Internal tool calls and raw tool responses stay inside the worker invocation. The dietitian follows the same wrapper pattern.</p>
+      <h3>The wellness worker is a direct model call</h3>
+      <p><code>wellness_node</code> sends a system message and the chat history directly to the shared model. It adds a wellness reply and returns to the supervisor. The conversation lets it tailor the tip to what the user shared.</p>
+      <p class="source">Source <a href="../agents.py">agents.py, create_agent_nodes</a> <a href="../main.py">main.py, build_graph</a></p>
+    </section>
+
+    <section id="tools" aria-labelledby="tools-heading">
+      <h2 id="tools-heading">External API tools</h2>
+      <p>The <code>@tool</code> wrappers give the model a callable name, a description from the docstring, and a string argument with guidance from <code>Annotated</code>. The wrapper creates a client object and calls its plan method. The client owns the HTTP request and formats the response as a list of strings. The category descriptions guide the model. The code uses a plain <code>str</code> argument.</p>
+      <h3>FitnessData and API Ninjas</h3>
+      <ol>
+        <li><code>fitness_data_tool(query)</code> forwards the category to <code>generate_workout_plan</code>. The expected categories are <code>full_body</code>, <code>upper_body</code>, and <code>lower_body</code>. Unknown categories fall back to <code>full_body</code>.</li>
+        <li>The planner chooses a muscle from <code>MUSCLE_GROUPS</code> and an exercise type from <code>EXERCISE_TYPES</code>. The tool uses the planner's default <code>intermediate</code> difficulty.</li>
+        <li><code>fetch_exercises</code> calls <code>/v1/exercises</code> with <code>type</code>, <code>muscle</code>, and <code>difficulty</code> query parameters. It sends the key in the <code>X-Api-Key</code> header and uses a ten-second request timeout.</li>
+        <li>The planner formats the name, muscle, and instructions for up to three valid records. An empty result leads to a fallback message.</li>
+      </ol>
+      <p class="note">A <code>full_body</code> request draws one muscle from the broadest pool. The code itself makes no guarantee of a balanced routine or training progression.</p>
+      <h3>Dietitian and Spoonacular</h3>
+      <ol>
+        <li><code>diet_tool(query)</code> calls <code>generate_meal_plan</code>. That method invokes <code>fetch_meal(diet=query)</code>, leaving <code>time_frame</code> at its default of <code>day</code>.</li>
+        <li><code>fetch_meal</code> calls <code>/mealplanner/generate</code> with <code>timeFrame</code> and <code>apiKey</code>. It sets <code>diet</code> for filtered plans such as vegetarian or vegan. Empty values and the string <code>"None"</code> omit that filter.</li>
+        <li>For each returned meal, <code>get_recipe_information</code> calls <code>/recipes/{id}/information</code>. The planner formats the title, prep time, servings, ingredients, and recipe instructions when available.</li>
+        <li>The planner appends calories in <code>kcal</code> and protein, fat, and carbohydrates in grams. A failed recipe lookup leaves the meal summary available. Missing meals produce a fallback message.</li>
+      </ol>
+      <p>One diet tool invocation with <code>n</code> meals issues <code>1 + n</code> sequential requests. The timeout applies to each call, so total response time can grow with meal count and additional model calls.</p>
+      <p class="source">Source <a href="../tools.py">tools.py</a></p>
+    </section>
+
+    <section id="memory" aria-labelledby="memory-heading">
+      <h2 id="memory-heading">Chat and memory</h2>
+      <dl>
+        <dt>What the user sees</dt>
+        <dd><code>st.session_state.messages</code> holds the display transcript, including the greeting and any friendly error message. Streamlit renders this list on each rerun.</dd>
+        <dt>What the graph remembers</dt>
+        <dd><code>InMemorySaver</code> stores graph checkpoints for a <code>thread_id</code>. Every new chat input submits one <code>HumanMessage</code>. The checkpointer recovers existing graph state for the same thread so the model can use earlier replies.</dd>
+        <dt>What survives a Streamlit rerun</dt>
+        <dd><code>@st.cache_resource</code> keeps the compiled graph and its in-memory checkpointer available across reruns. The cached graph is shared across sessions within the process, so each session stores its own UUID to identify its graph thread. Without the decorator, each rerun would create a new graph with an empty checkpointer. A process restart clears checkpoint memory.</dd>
+        <dt>What the stream renders</dt>
+        <dd><code>main.py</code> passes the <code>data</code> from each version 2 <code>updates</code> event to <code>parse_langgraph_output</code>. The parser skips supervisor updates and pairs worker text with the node name. Streamlit renders each reply as its worker completes.</dd>
+      </dl>
+      <pre><code># Shape of an illustrative update
+{"dietitian": {"messages": [AIMessage(content="A meal plan", name="dietitian")]}}
+# The parser returns
+[("dietitian", "A meal plan")]</code></pre>
+      <p>The supervisor graph and each ReAct worker cap execution at 15 graph steps. If either limit is hit or an error interrupts streaming, the UI logs the error type and displays a friendly error. Worker replies already displayed stay in the chat.</p>
+      <p class="source">Source <a href="../main.py">main.py, graph setup and chat loop</a> <a href="../utils.py">utils.py, parse_langgraph_output</a></p>
+    </section>
+
+    <section id="decisions" aria-labelledby="decisions-heading">
+      <h2 id="decisions-heading">Design choices you can explain</h2>
+      <p>These tradeoffs follow from the implementation. In an interview, tie your personal rationale to what you remember designing, changing, or testing.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Choice in the code</th><th scope="col">Benefit and cost</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Central supervisor</th><td>One place makes routing and completion decisions. Workers can stay focused. Each handoff adds a model call, and routing quality depends on the supervisor's prompt and model.</td></tr>
+            <tr><th scope="row">Typed routing schema</th><td>A <code>next</code> field gives the application a predictable interface to the model. A valid destination can still be the wrong choice for the user's intent.</td></tr>
+            <tr><th scope="row">Separate specialist tools</th><td>Fitness and dietitian see only their relevant tool, and the HTTP details live in <code>tools.py</code>. This limits each worker's tool surface and makes the HTTP behavior easier to exercise independently. The code still relies on the model to request the tool and use its result faithfully.</td></tr>
+            <tr><th scope="row">Direct wellness prompt</th><td>A short prompt-and-model chain is enough for the tips this worker provides. It relies on the model and the supplied conversation for its content.</td></tr>
+            <tr><th scope="row">Stream worker replies</th><td>The user can read an early answer while later steps run and see which agent answered. Mixed requests may yield several separate replies because there is no final synthesis node.</td></tr>
+            <tr><th scope="row">In-memory checkpoints</th><td>The prototype gets follow-up context without a database. State is tied to the running process, which matters for restarts or a deployment with multiple processes.</td></tr>
+            <tr><th scope="row">Groq-backed model</th><td>Hosted inference removes the requirement to run a model server locally. The tradeoff is a dependency on a provider key and network access. The earlier Ollama version ran against a local model service.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="source">Source <a href="../agents.py">agents.py</a> <a href="../main.py">main.py</a> <a href="../tools.py">tools.py</a> <a href="../CODE_REVIEW.md">CODE_REVIEW.md</a></p>
+    </section>
+
+    <section id="changes" aria-labelledby="changes-heading">
+      <h2 id="changes-heading">Fixes and limitations</h2>
+      <p>The review notes record prior issues. The fixes below are visible in the current source.</p>
+      <dl>
+        <dt>Vegetarian input landed in the wrong parameter</dt>
+        <dd><code>fetch_meal(query)</code> assigned the string to the first parameter, <code>time_frame</code>. The keyword call <code>fetch_meal(diet=query)</code> keeps the default timeframe and sends the requested diet filter.</dd>
+        <dt>Follow-up messages lost graph context</dt>
+        <dd>Recreating the graph also recreated its in-memory checkpointer. The cached graph keeps checkpoint state across script reruns. A per-session UUID replaces the earlier shared thread ID.</dd>
+        <dt>Wellness replies missed the user's context</dt>
+        <dd>The original prototype's prompt dropped the conversation. The current wellness node sends the system instructions and <code>state["messages"]</code> together.</dd>
+        <dt>The workout API always received stretching</dt>
+        <dd>The selected type was discarded in favor of a hard-coded value. The tool now passes the selected type as an argument.</dd>
+        <dt>HTTP failures could break the graph</dt>
+        <dd>The tools enforce a request timeout and validate responses before formatting them. The app shows a friendly error if graph execution fails.</dd>
+      </dl>
+      <p>The automated suite exercises the real graph with scripted model responses. It checks tool calls and results, multi-specialist turns, follow-up memory, session isolation, and malformed provider responses.</p>
+      <p class="source">Source <a href="../CODE_REVIEW.md">CODE_REVIEW.md, historical findings</a> <a href="../main.py">main.py, graph setup and error handler</a> <a href="../tools.py">tools.py</a> <a href="../tests/test_app.py">chat and graph tests</a></p>
+    </section>
+
+    <section id="run" aria-labelledby="run-heading">
+      <h2 id="run-heading">Run and explore</h2>
+      <p>Use Python 3.11 or newer. From the repository root, install the pinned dependencies and run the offline tests. Create a <code>.env</code> from <code>.env.example</code> and fill in the keys before starting Streamlit.</p>
+      <pre><code>python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+streamlit run main.py</code></pre>
+      <ul>
+        <li><code>GROQ_API_KEY</code> configures model access for the supervisor and all workers.</li>
+        <li><code>EXERCISE_API_KEY</code> is used by the API Ninjas tool.</li>
+        <li><code>DIET_API_KEY</code> is used by the Spoonacular tool.</li>
+      </ul>
+      <p><code>main.py</code> loads <code>.env</code> when the app starts. The prototype notebook uses Ollama and contains its own graph and exploratory calls.</p>
+      <h3>Practice tracing three behaviors</h3>
+      <ol>
+        <li><strong>Routing.</strong> Pick one prompt from each request example. Before sending it, predict the node and potential tool argument. Compare your prediction with the agent label in the UI and, if needed, inspect graph steps with a debugger.</li>
+        <li><strong>Memory.</strong> Ask for a meal plan, then ask “Can you make it vegan?” in the same session. Explain what the transcript shows, what the checkpoint stores, and why the graph receives enough context to interpret the follow-up.</li>
+        <li><strong>Failure handling.</strong> At <code>fetch_exercises</code>, trace what happens if a mocked response has a non-success status or a dictionary body. Explain each return value through <code>generate_workout_plan</code> and the worker.</li>
+      </ol>
+      <p class="source">Source <a href="../README.md">README.md setup</a> <a href="../requirements.txt">requirements.txt</a> <a href="../main.py">main.py</a> <a href="../Health_Assistant_AI_Agent.ipynb">notebook cells 4–7 and 35–41</a></p>
+    </section>
+
+    <section id="interview" aria-labelledby="interview-heading">
+      <h2 id="interview-heading">Interview practice</h2>
+      <h3>A one-minute project walkthrough</h3>
+      <blockquote><p>I built a Streamlit chat app around a LangGraph supervisor. A message enters the graph, and the supervisor returns a structured decision to route it to fitness, dietitian, or mental wellness. Fitness and dietitian use ReAct workers that can call exercise and meal APIs. The wellness worker puts the conversation into a prompt and calls the model directly. Each worker returns a reply to the graph, which the UI displays as the step completes. The supervisor can continue routing or finish, and a per-session checkpoint thread gives the graph context for follow-up questions.</p></blockquote>
+      <p>Adapt this to the work you personally did. Prepare one example you can explain in detail with the relevant file open, including what failed, how you checked it, and what changed.</p>
+      <h3>Answer out loud, then reveal the explanation</h3>
+      <details>
+        <summary>What makes this a multi-agent project if the roles share one model?</summary>
+        <p>The agents are distinct execution roles. Fitness and dietitian have different prompts and tools. Wellness has a direct prompt chain. The supervisor has a separate routing prompt and output schema. They share the model backend and exchange messages through graph state.</p>
+      </details>
+      <details>
+        <summary>What exactly does the supervisor return?</summary>
+        <p>The model call yields a structured <code>next</code> field. The Python node turns that into a <code>Command</code> that records the destination and moves the graph there. If the model chooses <code>FINISH</code>, the destination becomes <code>END</code>. Worker nodes produce the displayed text.</p>
+      </details>
+      <details>
+        <summary>How does a ReAct worker use an API?</summary>
+        <p>The model can ask to call the registered Python tool. The tool wrapper forwards the argument to a client in <code>tools.py</code>, the client requests the API and formats the data, and the model can use that tool return to compose its reply. The outer graph receives the worker's final message.</p>
+      </details>
+      <details>
+        <summary>Why do you need both Streamlit state and LangGraph checkpointing?</summary>
+        <p>Streamlit state is for the visible chat, including UI-only text. Graph checkpoints are for execution context that needs to be recovered on the next invocation. Caching preserves the checkpointer across reruns, while thread IDs keep sessions distinct within the process.</p>
+      </details>
+      <details>
+        <summary>How did the vegetarian filter bug happen?</summary>
+        <p>The first parameter of <code>fetch_meal</code> is <code>time_frame</code>, so passing <code>"vegetarian"</code> positionally filled the wrong field. Passing it as <code>diet=query</code> preserves the default timeframe and routes the value to the diet parameter.</p>
+      </details>
+      <details>
+        <summary>What happens if the supervisor keeps calling the same agent?</summary>
+        <p>It can repeat the worker because the prompt drives completion. The graph step limit bounds the loop and the UI error handler catches a failure. A future version could track requested topics and completion in explicit state.</p>
+      </details>
+      <details>
+        <summary>How would you add another specialist?</summary>
+        <p>Give the specialist its own node and a clear prompt. Bind a tool if its task needs one. Add its name to <code>Route</code> and the node mapping in <code>create_agent_nodes</code>, describe it in the supervisor prompt, and return control to the supervisor. Exercise routing and completion with sample prompts.</p>
+      </details>
+      <details>
+        <summary>What would you test without live API keys?</summary>
+        <p>Mock the model's routing decisions and HTTP responses. Check the route and termination, the exact meal and exercise request parameters, fallbacks for errors, and context across two turns using the same thread ID. <code>CODE_REVIEW.md</code> documents earlier mocked checks.</p>
+      </details>
+      <h3>Ready to explain it</h3>
+      <ul class="checklist">
+        <li><label><input type="checkbox">I can draw the graph and explain how control returns to the supervisor.</label></li>
+        <li><label><input type="checkbox">I can follow one API request from user input to tool argument to UI reply.</label></li>
+        <li><label><input type="checkbox">I can explain the checkpoint fix and one tool bug using the source.</label></li>
+        <li><label><input type="checkbox">I can name the model in my demo and explain one limitation of the current design.</label></li>
+      </ul>
+    </section>
+  </main>
+</div>
+<script>
+  const traceControls = document.getElementById("trace-controls");
+  const traceButtons = Array.from(traceControls.querySelectorAll("button"));
+  function showTrace(selected) {
+    for (const button of traceButtons) {
+      const active = button === selected;
+      button.setAttribute("aria-pressed", String(active));
+      document.getElementById(button.getAttribute("aria-controls")).hidden = !active;
+    }
+  }
+  for (const button of traceButtons) {
+    button.addEventListener("click", () => showTrace(button));
+  }
+  showTrace(traceButtons[0]);
+  traceControls.hidden = false;
+</script>
+</body>
+</html>
