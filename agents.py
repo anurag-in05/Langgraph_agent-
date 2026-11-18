@@ -2,9 +2,9 @@ from langchain_core.messages import HumanMessage,AIMessage
 from langgraph.prebuilt import create_react_agent
 from langgraph.graph import StateGraph, MessagesState,START, END
 from langgraph.checkpoint.memory import MemorySaver
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Annotated, Literal
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 
 from typing_extensions import TypedDict
 from langgraph.types import Command
@@ -15,7 +15,7 @@ import streamlit as st
 
 
 # Configuration
-llm = ChatOllama(model="qwen2.5:14b")
+llm = ChatGroq(model="llama-3.3-70b-versatile")
 
 
 memory = MemorySaver()
@@ -90,16 +90,18 @@ def dietitian_node(state: State) -> Command[Literal["supervisor"]]:
 
 
 
-def mental_health_node(state: State):
-    prompt = PromptTemplate.from_template(
-        """You are a supportive mental wellness coach.
+def mental_health_node(state: State) -> Command[Literal["supervisor"]]:
+    prompt = ChatPromptTemplate.from_messages([
+        ("system",
+         """You are a supportive mental wellness coach.
         Your task is to:
-        - Give a unique mental wellness tip or stress-reducing practice.
-        - Make it simple, kind, and useful. Avoid repeating tips."""
-    )
+        - Give a mental wellness tip or stress-reducing practice tailored to what the user shared.
+        - Make it simple, kind, and useful. Avoid repeating tips."""),
+        MessagesPlaceholder("messages"),
+    ])
 
     chain = prompt | llm
-    response = chain.invoke(state)
+    response = chain.invoke({"messages": state["messages"]})
     return Command(
         update={
             "messages": [

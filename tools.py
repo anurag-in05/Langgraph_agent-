@@ -6,9 +6,12 @@ import requests
 import random
 import os
 
+load_dotenv()
 
 fitness_api_key = os.getenv("EXERCISE_API_KEY")
 diet_api_key = os.getenv("DIET_API_KEY")
+
+REQUEST_TIMEOUT = 10  # seconds
 
 
 class FitnessData:
@@ -43,24 +46,30 @@ class FitnessData:
             'difficulty': difficulty
             }
         try:
-            response = requests.get(self.base_url, headers=headers,params=params)
+            response = requests.get(self.base_url, headers=headers, params=params, timeout=REQUEST_TIMEOUT)
             result = response.json()
-            if not result:
-                print(f"No exercises found for {muscle}")
-            return result
-        except requests.RequestException as e:
+        except (requests.RequestException, ValueError) as e:
             print(f"Request failed: {e}")
             return []
-        
-       
+        # On errors (bad key, quota) the API returns a dict like {"error": "..."} instead of a list
+        if not response.ok or not isinstance(result, list):
+            print(f"Exercise API error: {result}")
+            return []
+        if not result:
+            print(f"No exercises found for {muscle}")
+        return result
+
+
 
     def generate_workout_plan(self, query='full_body', difficulty='intermediate'):
         output=[]
         muscle_targets, exercise_types = self.get_muscle_groups_and_types()
-        muscle = random.choice(muscle_targets.get(query))
+        # Fall back to a full-body plan if the LLM passes an unknown category
+        muscle = random.choice(muscle_targets.get(query, muscle_targets['full_body']))
         type = random.choice(exercise_types.get('types'))
-        result = self.fetch_exercises('stretching', muscle, difficulty)
-        print(result)
+        result = self.fetch_exercises(type, muscle, difficulty)
+        if not result:
+            return ["Sorry, I couldn't fetch exercises right now. Please try again later."]
         limit_plan = result[:3]
         for i, data in enumerate(limit_plan):
             if data not in output:
@@ -88,32 +97,47 @@ class Dietitian:
             "apiKey":self.api_key
         }
 
-        response = requests.get(url, params=params)
-        if not response:
-            print('Meal Plan not found')
-        return response.json()
-    
+        # Spoonacular expects no diet param (not the string "None") for an unrestricted plan
+        if not diet or diet.lower() == "none":
+            params.pop("diet")
+
+        try:
+            response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
+            if not response.ok:
+                print(f"Meal Plan not found: {response.text}")
+                return {}
+            return response.json()
+        except (requests.RequestException, ValueError) as e:
+            print(f"Request failed: {e}")
+            return {}
+
     def get_recipe_information(self, recipe_id):
 
         url = f"{self.base_url}/recipes/{recipe_id}/information"
         params = {"apiKey": self.api_key}
-        response = requests.get(url, params=params)
-        if not response:
-            print("Recipe not found")
-        return response.json()
+        try:
+            response = requests.get(url, params=params, timeout=REQUEST_TIMEOUT)
+            if not response.ok:
+                print(f"Recipe not found: {response.text}")
+                return {}
+            return response.json()
+        except (requests.RequestException, ValueError) as e:
+            print(f"Request failed: {e}")
+            return {}
 
 
     def generate_meal_plan(self, query):
         meals_processed = []
-        meal_plan = self.fetch_meal(query)
-        print(meal_plan)
-        
+        meal_plan = self.fetch_meal(diet=query)
+
         meals = meal_plan.get('meals')
-        nutrients = meal_plan.get('nutrients')
+        nutrients = meal_plan.get('nutrients') or {}
+        if not meals:
+            return ["Sorry, I couldn't fetch a meal plan right now. Please try again later."]
 
         for i, meal in enumerate(meals):
             recipe_info = self.get_recipe_information(meal.get('id'))
-            ingredients = [ingredient['original'] for ingredient in recipe_info.get('extendedIngredients')]
+            ingredients = [ingredient['original'] for ingredient in recipe_info.get('extendedIngredients') or []]
 
             meals_processed.append(f"🍽️ Meal {i+1}: {meal.get('title')}")
             meals_processed.append(f"Prep Time: {meal.get('readyInMinutes')}")

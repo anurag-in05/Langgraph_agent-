@@ -19,7 +19,7 @@ This AI assistant helps users improve their well-being by generating:
 ### 🛠 Tech Stack
 - LangGraph – for building the multi-agent state machine
 - LangChain – for Tool orchestration
-- Qwen2.5:14b – for agent reasoning and responses
+- Groq (Llama 3.3 70B) – for agent reasoning and responses
 - Streamlit – for frontend
 - Python – main programming language
 
@@ -35,16 +35,13 @@ cd AI_Health_Supervisor_Agent
 ```bash
 pip install -r requirements.txt
 ```
-#### 3. Set up Qwen 
-```bash
-ollama pull qwen2.5:14b
-```
-#### 4. Add [Fitness](https://api-ninjas.com/profile) & [Dietitian](https://spoonacular.com/food-api/console#Profile)  API Key
-```bash
-Create a .env file:
-```
+#### 3. Add your API keys
+Copy `.env.example` to `.env` and fill in:
+- `GROQ_API_KEY` – from [Groq Console](https://console.groq.com/keys)
+- `EXERCISE_API_KEY` – from [API Ninjas](https://api-ninjas.com/profile)
+- `DIET_API_KEY` – from [Spoonacular](https://spoonacular.com/food-api/console#Profile)
 
-#### 5. Run the App
+#### 4. Run the App
 ```bash
 streamlit run main.py
 ```

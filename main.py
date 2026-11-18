@@ -2,30 +2,33 @@ from agents import State, fitness_node, dietitian_node, mental_health_node, supe
 from langchain_core.messages import HumanMessage,AIMessage
 from langgraph.graph import StateGraph, START
 from langgraph.checkpoint.memory import MemorySaver
-from langchain_ollama import ChatOllama
 from utils import parse_langgraph_output
 
 import streamlit as st
 import logging
 import time
+import uuid
 
 
-# Configuration
-llm = ChatOllama(model="qwen2.5:14b")
+# Streamlit reruns this script on every message, so build the graph (and its
+# MemorySaver) once per process; otherwise conversation history is lost each turn.
+@st.cache_resource
+def build_graph():
+    memory = MemorySaver()
+    builder = StateGraph(State)
+    builder.add_edge(START, "supervisor")
+    builder.add_node("supervisor", supervisor_node)
+    builder.add_node("fitness", fitness_node)
+    builder.add_node("dietitian", dietitian_node)
+    builder.add_node("wellness", mental_health_node)
+    return builder.compile(checkpointer=memory)
 
 
-memory = MemorySaver()
+graph = build_graph()
 
-
-
-
-builder = StateGraph(State)
-builder.add_edge(START, "supervisor")
-builder.add_node("supervisor", supervisor_node)
-builder.add_node("fitness", fitness_node)
-builder.add_node("dietitian", dietitian_node)
-builder.add_node("wellness", mental_health_node)
-graph = builder.compile(checkpointer=memory)
+# One conversation thread per browser session, so users don't share memory
+if "thread_id" not in st.session_state:
+    st.session_state.thread_id = str(uuid.uuid4())
 
 
 # Streamlit interface
@@ -70,19 +73,20 @@ if prompt := st.chat_input("Your question"):
                     )
                 ],
             }
-            config = {"configurable": {"thread_id": "2", "recursion_limit": 15}}   
-            # Get the final step in the stream
-            final_event = None
-            for step in graph.stream(inputs, config=config):
-                final_event = step  # Keep updating to the latest step
-                print(final_event)
-            
-                response_message=parse_langgraph_output(final_event)
-          
-                for agent, content in response_message:
+            config = {"configurable": {"thread_id": st.session_state.thread_id}, "recursion_limit": 15}
+            try:
+                for step in graph.stream(inputs, config=config):
+                    response_message=parse_langgraph_output(step)
 
-                    assistant_reply = f"**Agent:** `{agent}`\n\n{content}"
-                    st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
-                    st.markdown(assistant_reply)
-                    st.markdown("---")
+                    for agent, content in response_message:
+
+                        assistant_reply = f"**Agent:** `{agent}`\n\n{content}"
+                        st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
+                        st.markdown(assistant_reply)
+                        st.markdown("---")
+            except Exception:
+                logging.exception("Failed to generate response")
+                error_reply = "⚠️ Sorry, something went wrong while generating a response. Please try again."
+                st.session_state.messages.append({"role": "assistant", "content": error_reply})
+                st.error(error_reply)
     
